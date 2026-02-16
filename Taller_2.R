@@ -1,6 +1,7 @@
 install.packages(c("tidyverse","fixest","modelsummary","sandwich","lmtest",
                    "AER","ivreg","did","rdrobust","rddensity","broom"))
 library(tidyverse)
+library(readr)
 library(fixest)
 library(modelsummary)
 library(sandwich); 
