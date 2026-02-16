@@ -8,7 +8,7 @@ library(lmtest)
 library(psych)
 library(dplyr)
 
-VIF_ENDS2010 <- read.csv("~/Library/CloudStorage/OneDrive-Personal/Materias Uniandes/2026-10/Evaluacion de Politicas Publicas/Semana 4/VIF_ENDS2010.csv")
+VIF_ENDS2010 <- read.csv("https://raw.githubusercontent.com/migueldblancog/Taller-2-EPP/refs/heads/main/VIF_ENDS2010.csv")
 
 # Creando la base de datos separada ####
 
