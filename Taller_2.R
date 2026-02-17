@@ -11,6 +11,8 @@ library(dplyr)
 library(ggplot2)
 library(purrr)
 library(stargazer)
+library(officer)
+library(flextable)
 
 
 
@@ -171,8 +173,6 @@ var <- c("celos","infiel","amigos","familia","gastos",
 summary_stats <- psych::describe(df[var])
 print(summary_stats)
 
-library(officer)
-library(flextable)
 
 ft <- flextable(summary_stats) |> autofit()
 
