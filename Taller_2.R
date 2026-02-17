@@ -9,6 +9,10 @@ library(lmtest)
 library(psych)
 library(dplyr)
 library(ggplot2)
+library(purrr)
+library(stargazer)
+
+
 
 VIF_ENDS2010 <- read.csv("https://raw.githubusercontent.com/migueldblancog/Taller-2-EPP/refs/heads/main/VIF_ENDS2010.csv")
 
@@ -158,6 +162,25 @@ prop.table(table(df$sexo_forz))
 describe(df$sexo_forz)
 prop_sexo_forz <- sum(df$sexo_forz == 1, na.rm = TRUE) / 4539
 prop_sexo_forz
+
+## Tabla combinada ####
+
+var <- c("celos","infiel","amigos","familia","gastos",
+         "insultos","empujon","golpe_obj","arma","sexo_forz")
+
+summary_stats <- psych::describe(df[var])
+print(summary_stats)
+
+library(officer)
+library(flextable)
+
+ft <- flextable(summary_stats) |> autofit()
+
+doc <- read_docx() |>
+  body_add_par("Estadísticas descriptivas", style = "heading 1") |>
+  body_add_flextable(ft)
+
+print(doc, target = "/Users/miguelblanco/Library/CloudStorage/OneDrive-Personal/Materias Uniandes/2026-10/Evaluacion de Politicas Publicas/Semana 4/summary_stats.docx")
 
 
 # Alpha de Cronbach ####
@@ -381,4 +404,21 @@ psych::alpha(df[,c("celos","infiel","amigos","familia","gastos","insultos_num","
     )
   
  # Validación Convergente ##### 
+  
+  ## Estadisticas Descriptivas ####
+  
+  table(df$golpe_mano)
+  prop.table(table(df$golpe_mano))
+  describe(df$golpe_mano)
+  prop_golpe_mano <- sum(df$golpe_mano == 1, na.rm = TRUE) / 4539
+  prop_golpe_mano
+  
+  ##Pruebas de convergencia ####
+  
+  options(scipen = 999)
+  
+  cor.test(df$indice_ponderado, as.numeric(as.character(df$golpe_mano)), use="complete.obs")
+  # o si golpe_mano ya es 0/1 numérica:
+  cor.test(df$indice_ponderado, df$golpe_mano, use="complete.obs")
+
   
