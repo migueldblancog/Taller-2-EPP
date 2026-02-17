@@ -364,7 +364,23 @@ print(doc, target = "alpha_cronbach_tablas.docx")
   X <- as.matrix(df[, vars_2])
   
   df$indice_ponderado <- X %*% pesos
-  ### Estadisticas descriptivas ####
+ #
+  df$insultos_prev <- case_when(
+    df$insultos_num %in% c(2L, 3L) ~ 1L,
+    df$insultos_num == 1L ~ 0L,
+    TRUE ~ NA_integer_
+  )
+  vars_2 <- c("celos","infiel","amigos","familia","gastos",
+              "insultos_prev","empujon_completo","golpe_obj_completo",
+              "arma_completo","sexo_forz_completo")
+  
+  X <- as.matrix(df[, vars_2])
+  df$indice_ponderado <- as.vector(X %*% pesos)
+  
+  range(df$indice_ponderado, na.rm = TRUE)
+  
+  
+   ### Estadisticas descriptivas ####
   describe(df$indice_ponderado)
   
   
@@ -421,7 +437,8 @@ print(doc, target = "alpha_cronbach_tablas.docx")
       sd = sd(indice_ponderado, na.rm = TRUE)
     )
   
-  # 2) Crear la tabla de descriptivos
+  #tabla 
+  # 2) Crear la tabla
   tabla_edad <- df %>%
     group_by(rango_edad) %>%
     summarise(
@@ -430,31 +447,19 @@ print(doc, target = "alpha_cronbach_tablas.docx")
       Mediana = median(indice_ponderado, na.rm = TRUE),
       `Desv. Est.` = sd(indice_ponderado, na.rm = TRUE),
       .groups = "drop"
-    )
-  
-  # (Opcional pero recomendado) Redondear
-  tabla_edad <- tabla_edad %>%
+    ) %>%
     mutate(across(where(is.numeric), ~ round(., 3)))
   
-  # 3) Elegir dónde guardar el archivo (ventana)
-  ruta <- tcltk::tk_getSaveFile(
-    filetypes = "{{Word Document} {.docx}}",
-    defaultextension = ".docx"
-  )
-  
-  # 4) Pasar la tabla a Word
-  ft <- flextable(tabla_edad) %>%
-    autofit()
+  # 3) Pasar a Word
+  ft <- flextable(tabla_edad) %>% autofit()
   
   doc <- read_docx() %>%
     body_add_par("Tabla. Estadísticas descriptivas del índice ponderado por rango de edad",
                  style = "heading 1") %>%
     body_add_flextable(ft)
   
-  # 5) Guardar
-  print(doc, target = ruta)
-  
-  
+  # 4) Guardar en el directorio actual
+  print(doc, target = "tabla_indice_por_rango_edad.docx")
   
   
   
