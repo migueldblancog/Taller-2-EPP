@@ -508,6 +508,20 @@ print(doc, target = "alpha_cronbach_tablas.docx")
   prop_golpe_mano <- sum(df$golpe_mano == 1, na.rm = TRUE) / 4539
   prop_golpe_mano
   
+  summary_stats <- psych::describe(df$golpe_mano)
+  print(summary_stats)
+  
+  
+  ft <- flextable(summary_stats) |> autofit()
+  
+  doc <- read_docx() |>
+    body_add_par("Estadísticas descriptivas", style = "heading 1") |>
+    body_add_flextable(ft)
+  
+  print(doc, target = "summary_stats_golpe_mano.docx")
+  
+  
+  
   ##Pruebas de convergencia ####
   
   options(scipen = 999)
