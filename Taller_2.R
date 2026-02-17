@@ -8,13 +8,15 @@ library(sandwich);
 library(lmtest)
 library(psych)
 library(dplyr)
+library(ggplot2)
 
 VIF_ENDS2010 <- read.csv("https://raw.githubusercontent.com/migueldblancog/Taller-2-EPP/refs/heads/main/VIF_ENDS2010.csv")
 
 # Creando la base de datos separada ####
 
 df <- VIF_ENDS2010[, c(
-  "qhperson",
+  "QHWLTHI5",#Indice de riqueza
+  "QH03",  #edad declarada
   "Q1103AA", #Celos
   "Q1103BA", #Infiel
   "Q1103CA", #Amigo
@@ -22,10 +24,12 @@ df <- VIF_ENDS2010[, c(
   "Q1103FA", #Gastos
   "Q1104",   #Insultos
   "Q1107AB", #Empujon
+  "Q1107BB", #Golpe Mano ## variable de convergencia
   "Q1107CB", #Golpe Objeto
   "Q1107FB", #Arma
   "Q1107IB", #Sexo Forzado
   "Q1107AA", #Empujon
+  "Q1107BA", #Golpe Mano ## variable de convergencia
   "Q1107CA", #Golpe Objeto
   "Q1107FA", #Arma
   "Q1107IA"  #Sexo Forzado
@@ -64,6 +68,9 @@ df$insultos_num <- as.numeric(df$insultos)  # Nunca=1, Algunas veces=2, Muchas v
 df$empujon <- ifelse(df$Q1107AB == "Si", 1,
                      ifelse(df$Q1107AB == "No", 0, NA))
 
+df$golpe_mano <- ifelse(df$Q1107BB == "Si", 1,
+                       ifelse(df$Q1107BB == "No", 0, NA))
+
 df$golpe_obj <- ifelse(df$Q1107CB == "Si", 1,
                        ifelse(df$Q1107CB == "No", 0, NA))
 
@@ -75,6 +82,9 @@ df$sexo_forz <- ifelse(df$Q1107IB == "Si", 1,
 
 df$empujon_completo <- ifelse(df$Q1107AA == "Si", 1,
                      ifelse(df$Q1107AA == "No", 0, NA))
+
+df$golpe_mano_completo <- ifelse(df$Q1107BA == "Si", 1,
+                                ifelse(df$Q1107BA == "No", 0, NA))
 
 df$golpe_obj_completo <- ifelse(df$Q1107CA == "Si", 1,
                        ifelse(df$Q1107CA == "No", 0, NA))
@@ -162,25 +172,8 @@ psych::alpha(df[,c("celos","infiel","amigos","familia","gastos","insultos_num","
   #alpha(df[,c("JobSat1","JobSat2")])
   
 # Indice ####
-  
-  cols <- c("celos","infiel","amigos","familia","gastos","insultos_num","empujon_completo","golpe_obj_completo","arma_completo","sexo_forz_completo")
-  df <- df %>%
-    mutate(across(all_of(cols), ~ case_when(
-      tolower(trimws(.)) %in% c("si","sí") ~ 1L,
-      tolower(trimws(.)) %in% c("no") ~ 0L,
-      TRUE ~ NA_integer_   # no sabe / no responde
-    ))) %>%
-    mutate(
-      indice_violencia_sum = rowSums(across(all_of(cols)), na.rm = TRUE),
-      indice_violencia_0a1 = indice_violencia_sum / length(cols),
-      indice_violencia_0a100 = 100 * indice_violencia_0a1
-    )
-  
-  # Descriptivos
-  summary(df$indice_violencia_0a100)
-  table(df$indice_violencia_sum, useNA="ifany")
-  
-  
+ ## Indice de prevalencia ##### 
+
   cols <- c("celos","infiel","amigos","familia","gastos",
                 "empujon_completo","golpe_obj_completo","arma_completo","sexo_forz_completo")
   
@@ -199,9 +192,193 @@ psych::alpha(df[,c("celos","infiel","amigos","familia","gastos","insultos_num","
   #    )
    # ) %>%
     mutate(
-      indice_prev_sum = rowSums(pick(all_of(c(cols, "insultos_num"))), na.rm = TRUE),
-      indice_prev_0a1 = indice_prev_sum / length(c(cols, "insultos_num")),
+      indice_prev_sum = rowSums(pick(all_of(c(cols))), na.rm = TRUE),
+      indice_prev_0a1 = indice_prev_sum / length(c(cols)),
       indice_prev_0a100 = 100 * indice_prev_0a1
     )
+ 
   
+  ### Estadistica descriptiva ####
+  describe(df$indice_prev_0a100)
+
+  boxplot(df$indice_prev_0a100)
+  boxplot(df$indice_prev_0a1)
+  boxplot(df$indice_prev_sum)
+  
+  hist(df$indice_prev_0a100)
+  
+  ggplot(df, aes(x = indice_prev_0a100)) +
+    geom_bar(fill = "#C44E52") +
+    labs(
+      x = "Índice de prevalencia (0–100)",
+      y = "Frecuencia"
+    ) +
+    theme_minimal()
+  
+  library(ggplot2)
+  
+  library(ggplot2)
+  
+  ggplot(df, aes(x = indice_prev_0a100)) +
+    geom_histogram(
+      aes(y = after_stat(density)),
+      bins = 10,
+      fill = "grey80",
+      color = "black",
+      na.rm = TRUE
+    ) +
+    geom_density(
+      color = "#C44E52",
+      linewidth = 1.2,
+      na.rm = TRUE
+    ) +
+    scale_x_continuous(limits = c(0, 100)) +
+    labs(
+      title = "Distribución del índice de prevalencia (0–100)",
+      x = "Índice de prevalencia",
+      y = "Densidad"
+    ) +
+    theme_minimal()
+  
+  library(dplyr)
+  library(tidyr)
+ 
+  vars <- c(
+    "celos",
+    "infiel",
+    "amigos",
+    "familia",
+    "gastos",
+    "empujon_completo",
+    "golpe_obj_completo",
+    "arma_completo",
+    "sexo_forz_completo"
+  )
+  
+   
+  df_sum <- df %>%
+    summarise(across(all_of(vars), ~ sum(. == 1, na.rm = TRUE))) %>%
+    pivot_longer(
+      cols = everything(),
+      names_to = "categoria",
+      values_to = "total"
+    )
+  
+  
+  ggplot(df_sum, aes(x = reorder(categoria, total), y = total)) +
+    geom_bar(stat = "identity", fill = "#4C72B0") +
+    coord_flip() +
+    labs(
+      title = "Prevalencia de distintas formas de violencia",
+      x = "",
+      y = "Número de personas"
+    ) +
+    theme_minimal()
+  
+## Indice ponderado ####
+  vars_2 <- c(
+    "celos",
+    "infiel",
+    "amigos",
+    "familia",
+    "gastos",
+    "insultos_num",
+    "empujon_completo",
+    "golpe_obj_completo",
+    "arma_completo",
+    "sexo_forz_completo"
+  )
+  
+  pesos <- c(
+    0.10,  # celos
+    0.06,  # infiel
+    0.06,  # amigos
+    0.06,  # familia
+    0.06,  # gastos
+    0.12,  # insultos_num
+    0.10,  # empujon
+    0.10,  # golpe_obj
+    0.19,  # arma
+    0.15   # sexo_forz
+  )
+  
+  sum(pesos)  # debe ser 1
+  
+  X <- as.matrix(df[, vars_2])
+  
+  df$indice_ponderado <- X %*% pesos
+  ### Estadisticas descriptivas ####
+  describe(df$indice_ponderado)
+  
+  
+  ggplot(df, aes(x = indice_ponderado)) +
+    geom_histogram(
+      aes(y = after_stat(density)),
+      bins = 20,
+      fill = "grey80",
+      color = "black",
+      na.rm = TRUE
+    ) +
+    geom_density(
+      color = "#C44E52",
+      linewidth = 1.2,
+      na.rm = TRUE
+    ) +
+    scale_x_continuous(limits = c(0, 1)) +
+    labs(
+      title = "Distribución del índice ponderado",
+      x = "Índice ponderado",
+      y = "Densidad"
+    ) +
+    theme_minimal()
+  
+  ggplot(df, aes(y = indice_ponderado)) +
+    geom_boxplot(
+      fill = "grey80",
+      color = "black",
+      width = 0.25,
+      outlier.color = "black"
+    ) +
+    scale_y_continuous(limits = c(0, 1)) +
+    labs(
+      title = "Distribución del índice ponderado",
+      y = "Índice ponderado (0–1)",
+      x = ""
+    ) +
+    theme_minimal()
+  
+# Variacion por grupo de edad ####
+  df$rango_edad <- cut(
+    df$QH03,
+    breaks = c(-Inf, 18, 35, Inf),
+    labels = c("Adolescentes", "Adultos Jovenes", "Adultos"),
+    right = FALSE
+  )
+  
+  df %>%
+    group_by(rango_edad) %>%
+    summarise(
+      N = n(),
+      media = mean(indice_ponderado, na.rm = TRUE),
+      mediana = median(indice_ponderado, na.rm = TRUE),
+      sd = sd(indice_ponderado, na.rm = TRUE)
+    )
+  
+  
+  
+  
+  
+  
+  
+# Variaciones por Indice de Riqueza   ####
+  df %>%
+    group_by(QHWLTHI5) %>%
+    summarise(
+      N = n(),
+      media = mean(indice_ponderado, na.rm = TRUE),
+      mediana = median(indice_ponderado, na.rm = TRUE),
+      sd = sd(indice_ponderado, na.rm = TRUE)
+    )
+  
+ # Validación Convergente ##### 
   
