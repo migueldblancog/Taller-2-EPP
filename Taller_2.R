@@ -192,15 +192,37 @@ print(doc, target = "/Users/miguelblanco/Library/CloudStorage/OneDrive-Personal/
 alpha <- psych::alpha(df[,c("celos","infiel","amigos","familia","gastos","insultos_num","empujon_completo","golpe_obj_completo","arma_completo","sexo_forz_completo")])
 alpha
 
-print(
-  read_docx() |>
-    body_add_flextable(
-      flextable(as.data.frame(alpha$total)) |> autofit()
-    ),
-  target = "/Users/miguelblanco/Library/CloudStorage/OneDrive-Personal/Materias Uniandes/2026-10/Evaluacion de Politicas Publicas/Semana 4/Taller-2-EPP/alpha_cronbach.docx"
-)
+# 1) Tablas desde el objeto alpha
+tabla_total <- as.data.frame(alpha$total) %>%
+  mutate(across(where(is.numeric), ~ round(., 3)))
 
+tabla_drop <- as.data.frame(alpha$alpha.drop) %>%
+  mutate(item = rownames(.)) %>%
+  relocate(item) %>%
+  mutate(across(where(is.numeric), ~ round(., 3)))
 
+tabla_items <- as.data.frame(alpha$item.stats) %>%
+  mutate(item = rownames(.)) %>%
+  relocate(item) %>%
+  mutate(across(where(is.numeric), ~ round(., 3)))
+
+# 2) Convertir a flextable
+ft_total <- flextable(tabla_total) %>% autofit()
+ft_drop  <- flextable(tabla_drop)  %>% autofit()
+ft_items <- flextable(tabla_items) %>% autofit()
+
+# 3) Crear documento Word con las 3 tablas
+doc <- read_docx() %>%
+  body_add_par("Alpha de Cronbach", style = "heading 1") %>%
+  body_add_par("Escala completa", style = "heading 2") %>%
+  body_add_flextable(ft_total) %>%
+  body_add_par("Alpha si el ítem es eliminado", style = "heading 2") %>%
+  body_add_flextable(ft_drop) %>%
+  body_add_par("Estadísticas por ítem", style = "heading 2") %>%
+  body_add_flextable(ft_items)
+
+# 4) Guardar (en tu working directory actual)
+print(doc, target = "alpha_cronbach_tablas.docx")
 
 
   #Y tomando la sugerencia
@@ -399,7 +421,38 @@ print(
       sd = sd(indice_ponderado, na.rm = TRUE)
     )
   
+  # 2) Crear la tabla de descriptivos
+  tabla_edad <- df %>%
+    group_by(rango_edad) %>%
+    summarise(
+      N = n(),
+      Media = mean(indice_ponderado, na.rm = TRUE),
+      Mediana = median(indice_ponderado, na.rm = TRUE),
+      `Desv. Est.` = sd(indice_ponderado, na.rm = TRUE),
+      .groups = "drop"
+    )
   
+  # (Opcional pero recomendado) Redondear
+  tabla_edad <- tabla_edad %>%
+    mutate(across(where(is.numeric), ~ round(., 3)))
+  
+  # 3) Elegir dónde guardar el archivo (ventana)
+  ruta <- tcltk::tk_getSaveFile(
+    filetypes = "{{Word Document} {.docx}}",
+    defaultextension = ".docx"
+  )
+  
+  # 4) Pasar la tabla a Word
+  ft <- flextable(tabla_edad) %>%
+    autofit()
+  
+  doc <- read_docx() %>%
+    body_add_par("Tabla. Estadísticas descriptivas del índice ponderado por rango de edad",
+                 style = "heading 1") %>%
+    body_add_flextable(ft)
+  
+  # 5) Guardar
+  print(doc, target = ruta)
   
   
   
