@@ -472,6 +472,31 @@ print(doc, target = "alpha_cronbach_tablas.docx")
       mediana = median(indice_ponderado, na.rm = TRUE),
       sd = sd(indice_ponderado, na.rm = TRUE)
     )
+  # 1) Crear la tabla
+  tabla_QHWLTHI5 <- df %>%
+    group_by(QHWLTHI5) %>%
+    summarise(
+      N = n(),
+      Media = mean(indice_ponderado, na.rm = TRUE),
+      Mediana = median(indice_ponderado, na.rm = TRUE),
+      `Desv. Est.` = sd(indice_ponderado, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    mutate(across(where(is.numeric), ~ round(., 3)))
+  
+  # 2) Pasar la tabla a Word
+  ft <- flextable(tabla_QHWLTHI5) %>%
+    autofit()
+  
+  doc <- read_docx() %>%
+    body_add_par(
+      "Tabla. Estadísticas descriptivas del índice ponderado por nivel QHWLTHI5",
+      style = "heading 1"
+    ) %>%
+    body_add_flextable(ft)
+  
+  # 3) Guardar en el directorio actual
+  print(doc, target = "tabla_indice_por_QHWLTHI5.docx")
   
  # Validación Convergente ##### 
   
