@@ -189,8 +189,20 @@ print(doc, target = "/Users/miguelblanco/Library/CloudStorage/OneDrive-Personal/
  # alfa_df <- alpha(df, check.keys=TRUE)
   
   #Ahora tomando solo ciertas varibles
-psych::alpha(df[,c("celos","infiel","amigos","familia","gastos","insultos_num","empujon_completo","golpe_obj_completo","arma_completo","sexo_forz_completo")])
-  
+alpha <- psych::alpha(df[,c("celos","infiel","amigos","familia","gastos","insultos_num","empujon_completo","golpe_obj_completo","arma_completo","sexo_forz_completo")])
+alpha
+
+print(
+  read_docx() |>
+    body_add_flextable(
+      flextable(as.data.frame(alpha$total)) |> autofit()
+    ),
+  target = "/Users/miguelblanco/Library/CloudStorage/OneDrive-Personal/Materias Uniandes/2026-10/Evaluacion de Politicas Publicas/Semana 4/Taller-2-EPP/alpha_cronbach.docx"
+)
+
+
+
+
   #Y tomando la sugerencia
   #alpha(df[,c("JobSat1","JobSat2")])
   
